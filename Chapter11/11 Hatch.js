@@ -15,17 +15,17 @@ var Hatch = (function () {
         number: /^(\d+)\b/,
         word: /^(\w+)\b/,
         def: /^(_?\w+)\s*:/,
-        return: /^\>/,
+        //return: /^\>/,
         prop: /^\./,
         args: /^\(/,
         argsEnd: /^\)/,
-        obj: /^\{/,
-        objEnd: /^\}/,
+        closure: /^\{/,
+        closureEnd: /^\}/,
         seq: /^,/,
     };
     
     var parse = function (program) {
-        return parseObject(createObject(), program);
+        return parseClosure(createClosure(), program)[0];
     };
     
     var parseExpr = function (rest) {
@@ -37,7 +37,7 @@ var Hatch = (function () {
             var matchString = syntax.string.exec(rest);
             var matchNumber = syntax.number.exec(rest);
             var matchWord = syntax.word.exec(rest);
-            var matchObj = syntax.obj.exec(rest);
+            var matchClosure = syntax.closure.exec(rest);
             var matchProp = syntax.prop.exec(rest);
             var matchArgs = syntax.args.exec(rest);
             var matchSeq = syntax.seq.exec(rest);
@@ -57,41 +57,41 @@ var Hatch = (function () {
                 if (prev) { return [prev, rest]; }
                 expr[0] = { type: 'word', value: matchWord[1] };
                 expr[1] = cutMatch(rest, matchWord);
-            } else if (matchObj) {
-                // Match an object definition.
+            } else if (matchClosure) {
+                // Match an closure definition.
                 if (prev) { return [prev, rest]; }
-                expr = parseObject(createObject(), cutMatch(rest, matchObj));
+                expr = parseClosure(createClosure(), cutMatch(rest, matchClosure));
             } else if (matchProp) {
                 // Match a property lookup.
                 if (prev) {
                     var newRest = cutMatch(rest, matchProp)
                     var nextWord = syntax.word.exec(newRest);
+                    if (!nextWord) {
+                        throw new SyntaxError('Property is not given.');
+                    }
                     expr[0] = { type: 'prop', owner: prev, prop: nextWord[1] };
                     expr[1] = cutMatch(newRest, nextWord);
                 } else {
-                    //error
+                    throw new SyntaxError('Unexpected period.')
                 }
             } else if (matchArgs) {
                 // Match a function call.
-                if (prev) {
-                    var args = parseArgs(cutMatch(rest, matchArgs));
-                    expr[0] = { type: 'call', caller: prev, args: args[0] };
-                    expr[1] = args[1];
-                } else {
-                    // error
+                if (!prev) {
+                    throw new SyntaxError('Unexpected parentheses.')
                 }
+                var args = parseArgs(cutMatch(rest, matchArgs));
+                expr[0] = { type: 'call', caller: prev, args: args[0] };
+                expr[1] = args[1];
             } else if (matchSeq) {
                 // Match a sequence of expressions.
-                if (prev) {
-                    var nextExpr = parseExpr(cutMatch(rest, matchSeq));
-                    expr[0] = { type: 'seq', expr: prev, rest: nextExpr[0] };
-                    expr[1] = nextExpr[1];
-                } else {
-                    // error
+                if (!prev) {
+                    throw new SyntaxError('Unexpected comma.')
                 }
+                var nextExpr = parseExpr(cutMatch(rest, matchSeq));
+                expr[0] = { type: 'seq', expr: prev, rest: nextExpr[0] };
+                expr[1] = nextExpr[1];
             } else {
                 // If nothing else, return what you've got.
-                // Could lead to an infinite loop if the syntax is incorrect.
                 return [prev, rest];
             }
             
@@ -119,6 +119,9 @@ var Hatch = (function () {
                 return [args, cutMatch(rest, matchArgsEnd)];
             } else {
                 var nextArg = parseExpr(rest);
+                if (!nextArg[0]) {
+                    throw new SyntaxError('No end to the arguments.');
+                }
                 args.push(nextArg[0]);
                 return parseAllArgs(args, nextArg[1]);
             }
@@ -127,19 +130,19 @@ var Hatch = (function () {
         return parseAllArgs([], rest);
     };
     
-    var parseObject = function (obj, rest) {
+    var parseClosure = function (closure, rest) {
         rest = skipSpace(rest);
-        if (rest == '') { return obj; }
+        if (rest == '') { return [closure, '']; }
         
         var matchArgs = syntax.args.exec(rest);
         var matchDef = syntax.def.exec(rest);
-        var matchReturn = syntax.return.exec(rest);
-        var matchObjEnd = syntax.objEnd.exec(rest);
+        //var matchReturn = syntax.return.exec(rest);
+        var matchClosureEnd = syntax.closureEnd.exec(rest);
         
         if (matchArgs) {
             // Match arguments block.
             var args = parseArgs(cutMatch(rest, matchArgs));
-            obj.args = args[0];
+            closure.args = args[0];
             rest = args[1];
         } else if (matchDef) {
             // Match a definition.
@@ -150,29 +153,43 @@ var Hatch = (function () {
                 private = true;
             }
             var def = parseDef(word, private, cutMatch(rest, matchDef));
-            obj.defs.push(def[0]);
+            closure.defs.push(def[0]);
             rest = def[1];
+        /*
         } else if (matchReturn) {
             // Match a return expression.
             var expr = parseExpr(cutMatch(rest, matchReturn));
-            obj.expr = expr[0];
+            if (!closure.expr) {
+                throw new SyntaxError('No expression given.')
+            }
+            if (closure.expr.type) {
+                throw new SyntaxError('Too many expressions.')
+            }
+            closure.expr = expr[0];
             rest = expr[1];
-        } else if (matchObjEnd) {
-            // Match the end of an object.
-            return [obj, cutMatch(rest, matchObjEnd)];
+        */
+        } else if (matchClosureEnd) {
+            // Match the end of an closure.
+            return [closure, cutMatch(rest, matchClosureEnd)];
         } else {
             // Assume an unlabeled expression is a return value.
             var expr = parseExpr(rest);
-            obj.expr = expr[0];
+            if (!closure.expr) {
+                throw new SyntaxError('No expression given.')
+            }
+            if (closure.expr.type) {
+                throw new SyntaxError('Too many expressions.')
+            }
+            closure.expr = expr[0];
             rest = expr[1];
         }
         
-        return parseObject(obj, rest);
+        return parseClosure(closure, rest);
     };
     
-    var createObject = function () {
-        // Create a blank object.
-        return { type: 'object', args: [], defs: [], expr: Object.create(null) };
+    var createClosure = function () {
+        // Create a blank closure.
+        return { type: 'closure', args: [], defs: [], expr: Object.create(null) };
     };
     
     var skipSpace = function (string) {
@@ -231,5 +248,5 @@ var Hatch = (function () {
     
 })();
 
-var code = 'newVector: {(x y) > {x:x y:y} }\n addVectors : { (a b) > newVector(add(a.x b.x) add(a.y b.y)) }';
+var code = 'newVector: {(x y) {x:x y:y} }\n addVectors : {(a b) newVector(add(a.x b.x) add(a.y b.y))}';
 console.log(util.inspect(Hatch.parse(code), {showHidden: false, depth: null}));
