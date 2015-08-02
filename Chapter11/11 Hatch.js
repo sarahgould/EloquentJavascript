@@ -2,7 +2,12 @@ var util = require('util');
 
 var Hatch = (function () {
     
-    var run = function () {
+    var run = function (code) {
+        return (
+            'var env = Object.create(null);\n\n' +
+            polyfill +
+            'return ' + compile(parse(code)) + '.value();\n'
+        );
     };
     
     //=======
@@ -22,6 +27,7 @@ var Hatch = (function () {
         closure: /^\{/,
         closureEnd: /^\}/,
         seq: /^,/,
+        //comment: /\/\*.\*\//
     };
     
     var parse = function (program) {
@@ -77,7 +83,7 @@ var Hatch = (function () {
             } else if (matchArgs) {
                 // Match a function call.
                 if (!prev) {
-                    throw new SyntaxError('Unexpected parentheses.')
+                    throw new SyntaxError('Unexpected parenthesis.')
                 }
                 var args = parseArgs(cutMatch(rest, matchArgs));
                 expr[0] = { type: 'call', caller: prev, args: args[0] };
@@ -177,7 +183,7 @@ var Hatch = (function () {
             if (!closure.expr) {
                 throw new SyntaxError('No expression given.')
             }
-            if (closure.expr.type) {
+            if (closure.expr.type && closure.expr.type != 'nothing') {
                 throw new SyntaxError('Too many expressions.')
             }
             closure.expr = expr[0];
@@ -189,7 +195,7 @@ var Hatch = (function () {
     
     var createClosure = function () {
         // Create a blank closure.
-        return { type: 'closure', args: [], defs: [], expr: Object.create(null) };
+        return { type: 'closure', args: [], defs: [], expr: { type: 'nothing' } };
     };
     
     var skipSpace = function (string) {
@@ -200,17 +206,143 @@ var Hatch = (function () {
     };
         
     var cutMatch = function (string, match) {
+        // Return string that starts after a regex match.
         return string.slice(match[0].length);
     };
     
-    //======
-    // EVAL
-    //======
+    //===============
+    // TRANSCOMPILER
+    //===============
     
-    var eval = function (expr, env) {
+    var indent = 0;
+    
+    var compile = function (expr) {
+        if (!expr.type) { throw new TypeError('Expression has no type.'); }
+        return compileType[expr.type](expr);
     };
     
-    var evalType = {
+    var newLine = function (indentChange) {
+        if (indentChange) { indent += indentChange; }
+        var text = '\n';
+        for(var i=0; i<indent; i++) { text += '  '; }
+        return text;
+    };
+    
+    var compileType = {
+        closure: function (closure) {
+            // Convert a Hatch closure to Javascript code.
+            /*
+            CLOSURE
+            (function (env) {
+                env._private = foo;
+                env.public = bar;
+                return {
+                    public: env.public,
+                    value: function (closure.args[0].value) {
+                        closure.expr;
+                    };
+                };
+            })(env);
+            */
+            var closureCode = '(function (env) {' + newLine(1);
+            if (closure.defs) {
+                closure.defs.forEach(function (def) {
+                    closureCode += compile(def);
+                });
+            }
+            closureCode += 'return {' + newLine(1);
+            if (closure.defs) {
+                closure.defs.forEach(function (def) {
+                    if (!def.private) {
+                        closureCode += def.name + ': env.' + def.name + ',' + newLine();
+                    }
+                });
+            }
+            closureCode += 'value: function (';
+            if (closure.args) {
+                var lastArg = closure.args[closure.args.length-1];
+                closure.args.forEach(function (arg) {
+                    if (!arg.value) { throw new SyntaxError('Argument has no value.'); }
+                    closureCode += arg.value;
+                    if (arg !== lastArg) {
+                        closureCode += ', ';
+                    }
+                });
+            }
+            closureCode += ') {' + newLine(1);
+            closure.args.forEach(function (arg) {
+                if (!arg.value) { throw new SyntaxError('Argument has no value.'); }
+                closureCode += 'env.' + arg.value + ' = ' + arg.value + ';' + newLine();
+            });
+            if (closure.expr) {
+                closureCode += 'return ' + compile(closure.expr) + ';';
+            } else {
+                closureCode += 'return null;';
+            }
+            closureCode += newLine(-1) + '}' + newLine(-1) + '};' + newLine(-1) + '})(env)';
+            return closureCode;
+        },
+        def: function (def) {
+            // Convert a Hatch definition to Javascript code.
+            if (!def.name) { throw new SyntaxError('Definition has no name.'); }
+            if (!def.value) { throw new SyntaxError('Definition has no value.'); }
+            return 'env.' + def.name + ' = ' + compile(def.value) + ';' + newLine();
+        },
+        call: function (call) {
+            // Convert a Hatch function call to Javascript code.
+            if (!call.caller) { throw new SyntaxError('Call has no caller.'); }
+            var callCode = compile(call.caller) + '.value(';
+            if (call.args) {
+                var lastArg = call.args[call.args.length-1];
+                call.args.forEach(function (arg) {
+                    callCode += compile(arg);
+                    if (arg !== lastArg) {
+                        callCode += ', ';
+                    }
+                });
+            }
+            callCode += ')';
+            return callCode;
+        },
+        prop: function (prop) {
+            // Convert a Hatch property to Javascript code.
+            if (!prop.owner) { throw new SyntaxError('Property has no owner.'); }
+            if (!prop.prop) { throw new SyntaxError('Property has no property.'); }
+            return compile(prop.owner) + '.' + prop.prop;
+        },
+        seq: function (seq) {
+            // Convert a Hatch sequence to Javascript code.
+            /*
+            SEQUENCE
+            function () {
+                expr;
+                return rest;
+            }();
+            */
+            if (!seq.expr || !seq.rest) { throw new SyntaxError('Sequence has a missing expression.'); }
+            var seqCode = 'function () {' + newLine(1);
+            seqCode += compile(seq.expr) + ';' + newLine();
+            seqCode += 'return ' + compile(seq.rest) + ';' + newLine(-1) + '}' + newLine();
+            return seqCode;
+        },
+        word: function (word) {
+            // Convert a Hatch word to Javascript code.
+            if (!word.value) { throw new SyntaxError('Word has no value.'); }
+            return 'env.' + word.value;
+        },
+        string: function (string) {
+            // Convert a Hatch string to Javascript code.
+            if (!string.value) { throw new SyntaxError('String has no value.'); }
+            return '"' + string.value + '"';
+        },
+        number: function (number) {
+            // Convert a Hatch number to Javascript code.
+            if (!number.value) { throw new SyntaxError('Number has no value.'); }
+            return number.value;
+        },
+        nothing: function (nothing) {
+            return 'null';
+        },
     };
     
     
@@ -218,35 +350,33 @@ var Hatch = (function () {
     // BUILT-INS
     //===========
     
-    var specialForms = {
-    };
-    specialForms.prototype = null;
-    
-    //=============
-    // ENVIRONMENT
-    //=============
-    
-    var topEnv = {
-    };
-    
-    topEnv.prototype = null;
-    
-    //=========
-    // COMPILE
-    //=========
-    
-    var compile = function () {
-    };
+    var polyfill =
+        "// HATCH basic commands\n" +
+        "env.add = {value: function (x, y) { return x + y; } };\n" +
+        "env.sub = {value: function (x, y) { return x - y; } };\n" +
+        "env.mul = {value: function (x, y) { return x * y; } };\n" +
+        "env.div = {value: function (x, y) { return x / y; } };\n" +
+        "\n// HATCH transcompiled code\n" ;
     
     //========
     // EXPORT
     //========
     
     return {
+        run: run,
         parse: parse
     };
     
 })();
 
-var code = 'newVector: {(x y) {x:x y:y} }\n addVectors : {(a b) newVector(add(a.x b.x) add(a.y b.y))}';
-console.log(util.inspect(Hatch.parse(code), {showHidden: false, depth: null}));
+var code = 'newVector: {(x y) {x:x y:y} }\n' +
+    'addVectors : {(a b) newVector(add(a.x b.x) add(a.y b.y))}\n' +
+    'vector1: newVector(1 1)\n' +
+    'vector2: newVector(1 2)\n' +
+    'addVectors(vector1 vector2).x';
+//var code = 'a: { thing.a }';
+var jsCode = Hatch.run(code);
+//console.log(util.inspect(Hatch.parse(code), {showHidden: false, depth: null}));
+console.log(jsCode);
+var f = new Function(jsCode);
+console.log(f());
