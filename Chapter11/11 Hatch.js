@@ -374,9 +374,7 @@ var code = 'newVector: {(x y) {x:x y:y} }\n' +
     'vector1: newVector(1 1)\n' +
     'vector2: newVector(1 2)\n' +
     'addVectors(vector1 vector2).x';
-//var code = 'a: { thing.a }';
 var jsCode = Hatch.run(code);
-//console.log(util.inspect(Hatch.parse(code), {showHidden: false, depth: null}));
 console.log(jsCode);
 var f = new Function(jsCode);
 console.log(f());
