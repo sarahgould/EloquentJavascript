@@ -1,0 +1,62 @@
+<!doctype html>
+
+<style>
+    html {
+        height: 100%;
+        background: #20293F;
+    }
+    body {
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+        background: linear-gradient(#20293F,#66324C);
+        color: #ddd;
+        font: 20px monospace;
+        text-align: center;
+        height: 100%;
+        margin: 0;
+    }
+    #instructions {
+        padding-top: 200px;
+    }
+    .star {
+        background: #fff;
+        position: absolute;
+        opacity: 1;
+    }
+</style>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+
+<script type="text/javascript">
+    $(document).ready( function () {
+        var timer = setTimeout(updateStars, 100);
+        var nightfall = 1;
+        function updateStars() {
+            var fade;
+            $('.star').each( function () {
+                fade = $(this).css('opacity');
+                fade = fade * (Math.random() * (1.1-0.91) + 0.91);
+                $(this).css('opacity', fade);
+            });
+            nightfall = Math.max(0, nightfall - 0.001);
+            $('body').css('background', 'linear-gradient(rgba(32,41,63,'+nightfall+'), rgba(102,50,76,'+nightfall+'))');
+            timer = setTimeout(updateStars, 100);
+        }
+        $('html').click( function (e) {
+            $('#instructions').remove();
+            var r = parseInt(Math.random() * 5 + 1);
+            var fade = Math.random() * (1-0.5) + 0.5;
+            var star = $('<div>');
+            star.addClass('star');
+            star.css('height', r*2);
+            star.css('width', r*2);
+            star.css('border-radius', r);
+            star.css('left', e.pageX-r);
+            star.css('top', e.pageY-r);
+            star.css('opacity', fade);
+            $('body').append(star);
+        });
+    });
+</script>
+
+<div id="instructions">click to<br/>make the stars<br/>come out</div>

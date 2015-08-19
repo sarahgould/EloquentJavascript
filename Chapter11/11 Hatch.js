@@ -2,7 +2,7 @@
 
 HATCH TUTORIAL
 
-<< Variables >>
+<< Definitions >>
 a : 1
 
 << Objects >>
@@ -31,6 +31,12 @@ d : {
 d.public << Returns: "now you see me" >>
 d._private << Returns: undefined >>
 d.getPrivate("gingko") << Returns: "now you see don't" >>
+
+WISH LIST
+- Hatch Fiddle
+- negative/decimal number support (I think just change the regexp)
+- lists (anonymous variables?)
+- maybe: mutable variables (states)?
 
 */
 
