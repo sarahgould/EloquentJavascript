@@ -1,0 +1,79 @@
+<!doctype html>
+
+<style>
+    body {
+        padding: 3em;
+        font-size: 20px;
+        font-family: sans-serif;
+    }
+    
+    #data-tabs ~ div {
+        padding: 1em;
+        background: #666;
+        color: #fff;
+        min-height: 20em;
+    }
+    
+    #data-tabs button + button {
+        margin-left: 0.5em;
+    }
+    
+    #data-tabs button {
+        font-size: 150%;
+        line-height: 1.8;
+        margin-bottom: 0.5em;
+        padding: .25em 2em;
+        display: inline-block;
+        appearance: none;
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        background: #ccc;
+        color: #fff;
+    }
+    
+    #data-tabs button:focus {
+        outline: none;
+    }
+    
+    #data-tabs button.selected {
+        background: #666;
+        border-bottom: .5em solid #666;
+        margin-bottom: 0;
+    }
+</style>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+
+<script type="text/javascript">
+    var currentTab;
+    
+    var asTabs = function (node) {
+        node.prepend('<div id="data-tabs">');
+        node.children('div[data-tabname]').each(function () {
+            var tabName = $(this).attr('data-tabname');
+            $('#data-tabs').append('<button data-tabname="'+tabName+'" onclick="changeTab(\''+tabName+'\')">'+tabName+'</button>');
+            $(this).css('display', 'none');
+        });
+    }
+    
+    var changeTab = function (tabName) {
+        $('div[data-tabname="'+tabName+'"]').css('display', 'block');
+        $('button[data-tabname="'+tabName+'"]').addClass('selected');
+        if (currentTab) {
+            $('div[data-tabname="'+currentTab+'"]').css('display', 'none');
+            $('button[data-tabname="'+currentTab+'"]').removeClass('selected');
+        }
+        currentTab = tabName;
+    };
+    
+    $(document).ready( function () {
+        asTabs($('#wrapper'));
+    });
+</script>
+
+<div id="wrapper">
+    <div data-tabname="one">Tab one</div>
+    <div data-tabname="two">Tab two</div>
+    <div data-tabname="three">Tab three</div>
+</div>

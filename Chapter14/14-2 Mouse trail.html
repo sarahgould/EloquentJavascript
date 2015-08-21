@@ -1,0 +1,34 @@
+<!doctype html>
+
+<style>
+    .trail { /* className for the trail elements */
+        position: absolute;
+        height: 6px; width: 6px;
+        border-radius: 3px;
+        background: teal;
+    }
+    body {
+        height: 300px;
+    }
+</style>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+
+<script type="text/javascript">
+    $(document).ready( function () {
+        var currentDot = 0;
+        var maxDots = 6;
+        
+        for (var i=0; i<maxDots; i++) {
+            $('#trails').append('<div class="trail" id="trail'+i+'"></div>');
+        }
+        
+        $('html').mousemove( function (e) {
+            $('#trail'+currentDot).css({left:e.pageX-3, top:e.pageY-3});
+            currentDot ++;
+            if (currentDot >= maxDots) { currentDot = 0; }
+        });
+    });
+</script>
+
+<div id="trails"></div>
