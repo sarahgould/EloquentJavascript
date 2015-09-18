@@ -68,7 +68,7 @@ var Hatch = (function () {
         closure: /^\{/,
         closureEnd: /^\}/,
         seq: /^,/,
-        comment: /^(\<<.*?\>>)/
+        comment: /^(<<.*?>>)/
     };
     
     var parse = function (program) {
@@ -116,7 +116,7 @@ var Hatch = (function () {
             } else if (matchProp) {
                 // Match a property lookup.
                 if (prev) {
-                    var newRest = cutMatch(rest, matchProp)
+                    var newRest = cutMatch(rest, matchProp);
                     var nextWord = syntax.word.exec(newRest);
                     if (!nextWord) {
                         throw new SyntaxError('Property is not given.');
@@ -124,12 +124,12 @@ var Hatch = (function () {
                     expr[0] = { type: 'prop', owner: prev, prop: nextWord[1] };
                     expr[1] = cutMatch(newRest, nextWord);
                 } else {
-                    throw new SyntaxError('Unexpected period.')
+                    throw new SyntaxError('Unexpected period.');
                 }
             } else if (matchArgs) {
                 // Match a function call.
                 if (!prev) {
-                    throw new SyntaxError('Unexpected parenthesis.')
+                    throw new SyntaxError('Unexpected parenthesis.');
                 }
                 var args = parseArgs(cutMatch(rest, matchArgs));
                 expr[0] = { type: 'call', caller: prev, args: args[0] };
@@ -137,7 +137,7 @@ var Hatch = (function () {
             } else if (matchSeq) {
                 // Match a sequence of expressions.
                 if (!prev) {
-                    throw new SyntaxError('Unexpected comma.')
+                    throw new SyntaxError('Unexpected comma.');
                 }
                 var nextExpr = parseExpr(cutMatch(rest, matchSeq));
                 expr[0] = { type: 'seq', expr: prev, rest: nextExpr[0] };
@@ -184,7 +184,7 @@ var Hatch = (function () {
     
     var parseClosure = function (closure, rest) {
         rest = skipSpace(rest);
-        if (rest == '') { return [closure, '']; }
+        if (rest === '') { return [closure, '']; }
         
         var matchArgs = syntax.args.exec(rest);
         var matchDef = syntax.def.exec(rest);
@@ -213,10 +213,10 @@ var Hatch = (function () {
             // Assume an unlabeled expression is a return value.
             var expr = parseExpr(rest);
             if (!closure.expr) {
-                throw new SyntaxError('No expression given.')
+                throw new SyntaxError('No expression given.');
             }
             if (closure.expr.type && closure.expr.type != 'nothing') {
-                throw new SyntaxError('Too many expressions.')
+                throw new SyntaxError('Too many expressions.');
             }
             closure.expr = expr[0];
             rest = expr[1];

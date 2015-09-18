@@ -42,7 +42,7 @@ var levelObject = {
         for (var y=yStart; y<yEnd; y++) {
             for (var x=xStart; x<xEnd; x++) {
                 var fieldType = this.grid[y][x];
-                if (fieldType) { return fieldType; };
+                if (fieldType) { return fieldType; }
             }
         }
     },
@@ -61,7 +61,7 @@ var levelObject = {
     },
 
     animate: function (step, keys) {
-        if (this.status != null) {
+        if (this.status !== null) {
             this.finishDelay -= step;
         }
         while (step > 0) {
@@ -85,7 +85,7 @@ var levelObject = {
     },
 
     playerTouched: function (type, actor) {
-        if (type == 'lava' && this.status == null) {
+        if (type == 'lava' && this.status === null) {
             this.status = 'lost';
             this.finishDelay = 1;
         } else if (type == 'coin') {
@@ -102,7 +102,7 @@ var levelObject = {
     },
 
     isFinished: function() {
-        return this.status != null && this.finishDelay < 0;
+        return this.status !== null && this.finishDelay < 0;
     },
 };
 
@@ -364,7 +364,7 @@ var DOMDisplay = function (parent, level) {
 
     d.wrap.append(d.drawBackground());
     d.actorLayer = null;
-    d.drawFrame()
+    d.drawFrame();
 
     parent.append(d.wrap);
 
@@ -404,7 +404,7 @@ var runAnimation = function (frameFunc) {
     var lastTime = null;
     var frame = function (time) {
         var stop = false;
-        if (lastTime != null) {
+        if (lastTime !== null) {
             var timeStep = Math.min(time - lastTime, 100) / 1000;
             stop = (frameFunc(timeStep) === false);
         }
@@ -472,6 +472,6 @@ var runGame = function (plans, Display) {
                 $('body').append('<div class="message">YOU WON</div>');
             }
         });
-    }
+    };
     startLevel(0, 3);
 };

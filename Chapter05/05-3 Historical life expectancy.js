@@ -23,7 +23,7 @@ function groupBy(array, f) {
 var ageByCentury = groupBy(ancestry, function (person) {
         return Math.ceil(person.died / 100);
     });
-for (century in ageByCentury) {
+for (var century in ageByCentury) {
     var averageAge = average(ageByCentury[century].map(function(person) {
         return (person.died-person.born);
     }));

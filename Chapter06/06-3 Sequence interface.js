@@ -17,18 +17,18 @@ function ArraySeq(array) {
 ArraySeq.prototype.reset = function() {
     // Resets to the beginning of the sequence.
     this.index = -1;
-}
+};
 
 ArraySeq.prototype.lastElement = function() {
     // Checks to see if there are any more elements.
     return this.array[this.index+1] === undefined;
-}
+};
 
 ArraySeq.prototype.next = function() {
     // Returns current element and then increments index.
     this.index ++;
     return this.array[this.index];
-}
+};
 
 
 
@@ -41,18 +41,18 @@ function RangeSeq(from, to) {
 RangeSeq.prototype.reset = function() {
     // Resets to the beginning of the sequence.
     this.current = this.from - 1;
-}
+};
 
 RangeSeq.prototype.lastElement = function() {
     // Checks to see if there are any more elements.
     return this.current + 1 > this.to;
-}
+};
 
 RangeSeq.prototype.next = function() {
     // Returns current element and then increments index.
     this.current ++;
     return this.current;
-}
+};
 
 
 

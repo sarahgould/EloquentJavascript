@@ -4,7 +4,7 @@ function StretchCell(inner, width, height) {
     this.inner = inner;
     this.newWidth = width;
     this.newHeight = height;
-};
+}
 
 StretchCell.prototype.minWidth = function() {
     return Math.max(this.inner.minWidth(), this.newWidth);

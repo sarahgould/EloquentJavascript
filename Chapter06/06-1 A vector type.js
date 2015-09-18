@@ -9,14 +9,14 @@ var vector = {
     get length () {
         return Math.sqrt(this.x * this.x + this.y * this.y);
     },
-}
+};
 
 var createVector = function (x, y) {
     var v = Object.create(vector);
     v.x = x;
     v.y = y;
     return v;
-}
+};
 
 console.log(createVector(1, 2).plus(createVector(2, 3)));
 // → Vector{x: 3, y: 5}

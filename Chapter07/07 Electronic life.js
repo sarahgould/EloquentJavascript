@@ -87,7 +87,7 @@ function WallFollower () {
     // Follows the wall.
     var self = this;
     self.dir = 's';
-};
+}
 WallFollower.prototype.act = function (view) {
     var self = this;
     var start = self.dir;
