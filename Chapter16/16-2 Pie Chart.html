@@ -1,0 +1,43 @@
+<canvas width="600" height="300"></canvas>
+<script>
+    var results = [
+        {name: "Satisfied", count: 50, color: "lightblue"},
+        {name: "Neutral", count: 10, color: "lightgreen"},
+        {name: "Unsatisfied", count: 100, color: "pink"},
+        {name: "No comment", count: 90, color: "silver"}
+    ];
+    
+    var cx = document.querySelector("canvas").getContext("2d");
+    var total = results.reduce( function(sum, choice) {
+        return sum + choice.count;
+    }, 0);
+
+    var currentAngle = -0.5 * Math.PI;
+    var centerX = 300, centerY = 150;
+    var radius = 100;
+    
+    cx.font = '14px Arial';
+    cx.textBaseline = 'middle';
+    results.forEach( function(result) {
+        var sliceAngle = (result.count / total) * 2 * Math.PI;
+        cx.beginPath();
+        cx.arc(centerX, centerY, radius, currentAngle, currentAngle + sliceAngle);
+        currentAngle += sliceAngle;
+        cx.lineTo(centerX, centerY);
+        cx.fillStyle = result.color;
+        cx.fill();
+        var centerAngle = currentAngle - sliceAngle/2;
+        var textRadius = radius * 1.1;
+        if (Math.cos(centerAngle) < 0) {
+            cx.textAlign = 'right';
+        } else {
+            cx.textAlign = 'left';
+        }
+        cx.fillStyle = 'black';
+        cx.fillText(result.name,
+                    centerX + textRadius * Math.cos(centerAngle),
+                    centerY + textRadius * Math.sin(centerAngle));
+    });
+</script>
+
+<!--801-333-4962-->

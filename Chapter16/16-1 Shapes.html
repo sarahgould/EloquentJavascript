@@ -1,0 +1,67 @@
+<canvas width="600" height="200"></canvas>
+<script>
+    var cx = document.querySelector("canvas").getContext("2d");
+
+    var drawTrapezoid = function (x, y, size) {
+        cx.beginPath();
+        cx.moveTo(x+size*(1/4), y);
+        cx.lineTo(x+size, y);
+        cx.lineTo(x+size*(5/4), y+size*(5/8));
+        cx.lineTo(x, y+size*(5/8));
+        cx.closePath();
+        cx.stroke();
+    };
+    
+    drawTrapezoid(10, 20, 50);
+
+    var drawDiamond = function (x, y, w) {
+        cx.save();
+        cx.translate(x, y);
+        cx.rotate(Math.PI/4);
+        cx.fillStyle = 'red';
+        cx.fillRect(0, 0, w, w);
+        cx.restore();
+    };
+    
+    drawDiamond(120, 10, 40);
+
+    var drawZigzag = function (x, y, w, h, reps) {
+        var zigHeight = h/reps;
+        cx.beginPath();
+        cx.moveTo(x, y);
+        for (var i=1; i<=reps; i+=2) {
+            cx.lineTo(x+w, y+zigHeight*i);
+            cx.lineTo(x, y+zigHeight*(i+1));
+        }
+        cx.stroke();
+    };
+    
+    drawZigzag(170, 10, 50, 50, 8);
+
+    var drawSpiral = function (x, y, r) {
+        cx.beginPath();
+        cx.moveTo(x, y);
+        for (var i=0; i<100; i++) {
+            var dist = (r/100)*i;
+            var angle = i*((Math.PI*2)/20);
+            cx.lineTo(x+Math.cos(angle)*dist, y+Math.sin(angle)*dist);
+        }
+        cx.stroke();
+    };
+    
+    drawSpiral(270, 40, 40);
+
+    var drawStar = function (x, y, r, points) {
+        cx.beginPath();
+        cx.moveTo(x, y);
+        for (var i=0; i<points; i++) {
+            var angle = i*((Math.PI*2)/points);
+            cx.quadraticCurveTo(x, y, x+Math.cos(angle)*r, y+Math.sin(angle)*r);
+        }
+        cx.quadraticCurveTo(x, y, x+Math.cos(0)*r, y+Math.sin(0)*r);
+        cx.fillStyle = 'gold';
+        cx.fill();
+    };
+    
+    drawStar(360, 40, 40, 7);
+</script>

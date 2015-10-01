@@ -1,0 +1,71 @@
+<canvas width="400" height="400"></canvas>
+<script>
+    var cx = document.querySelector("canvas").getContext("2d");
+
+    var lastTime = null;
+    function frame(time) {
+        if (lastTime != null) {
+            updateAnimation(Math.min(100, time - lastTime) / 1000);
+        }
+        lastTime = time;
+        requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+    
+    function boxFactory(x, y, width, height) {
+        var boxProto = {
+            x: x, y:y, width:width, height: height,
+            draw: function () {
+                cx.beginPath();
+                cx.moveTo(x, y);
+                cx.lineTo(x+width, y);
+                cx.lineTo(x+width, y+height);
+                cx.lineTo(x, y+height);
+                cx.closePath();
+                cx.fillStyle = 'darkgray';
+                cx.fill();
+            }
+        }
+        return Object.create(boxProto);
+    }
+    
+    var box = boxFactory(10, 10, 380, 380);
+    
+    function ballFactory(startX, startY, color) {
+        var ballProto = {
+            color: color, x: startX, y: startY,
+            r: 20,
+            vel: 100,
+            angle: Math.random()*Math.PI*2,
+            update: function (step) {
+                this.x += Math.cos(this.angle) * this.vel * step;
+                this.y += Math.sin(this.angle) * this.vel * step;
+                if (this.x+this.r >= box.x+box.width ||
+                    this.x-this.r <= box.x ||
+                    this.y+this.r >= box.y+box.height ||
+                    this.y-this.r <= box.y) {
+                        this.angle += Math.PI/2;
+                }  
+            },
+            draw: function () {
+                cx.beginPath();
+                cx.arc(this.x, this.y, this.r, 0, Math.PI*2);
+                cx.fillStyle = this.color;
+                cx.fill();
+            }
+        };
+        return Object.create(ballProto);
+    }
+    
+    var ball = ballFactory(40 + box.x + Math.random()*(box.width-40),
+                           40 + box.y + Math.random()*(box.height-40),
+                           'white');
+
+    function updateAnimation(step) {
+        ball.update(step);
+        
+        cx.clearRect(0, 0, 400, 400);
+        box.draw();
+        ball.draw();
+    }
+</script>
