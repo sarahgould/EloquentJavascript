@@ -1,0 +1,32 @@
+<script>
+    var req = new XMLHttpRequest();
+    req.open("GET", "http://eloquentjavascript.net/author", false);
+    req.setRequestHeader("Accept", "text/plain");
+    req.send(null);
+    console.log(req.responseText);
+</script>
+
+<script>
+    var req = new XMLHttpRequest();
+    req.open("GET", "http://eloquentjavascript.net/author", false);
+    req.setRequestHeader("Accept", "text/html");
+    req.send(null);
+    console.log(req.responseText);
+</script>
+
+<script>
+    var req = new XMLHttpRequest();
+    req.open("GET", "http://eloquentjavascript.net/author", false);
+    req.setRequestHeader("Accept", "application/json");
+    req.send(null);
+    console.log(req.responseText);
+</script>
+
+<script>
+    // This is supposed to fail. There are no rainbows and unicorns.
+    var req = new XMLHttpRequest();
+    req.open("GET", "http://eloquentjavascript.net/author", false);
+    req.setRequestHeader("Accept", "application/rainbows+unicorns");
+    req.send(null);
+    console.log(req.responseText);
+</script>
