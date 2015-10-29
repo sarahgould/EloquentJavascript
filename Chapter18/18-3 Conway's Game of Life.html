@@ -1,0 +1,189 @@
+<!doctype html5>
+
+<style>
+    html {
+        background: #333;
+        color: #fff;
+        width: 100%;
+        font: 16px monospace;
+        text-align: center;
+    }
+    body {
+        margin: 1em auto;
+        width: 600px;
+    }
+    #grid .cell {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        background: #fff;
+    }
+    #grid .alive {
+        background: #D94052;
+    }
+    #next {
+        display: block;
+        height: 40px;
+        width: 100%;
+        border: none;
+        border-top: 1px solid #fff;
+        font: inherit;
+        background: #666;
+        color: #fff;
+    }
+</style>
+
+<h1>a game full of life</h1>
+<div id="grid"></div>
+<button id="next">next generation</button>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+<script>
+    
+    var createGame = function (w, h) {
+        var game = Object.create(null);
+        
+        game.grid = [];
+        game.grid.width = w;
+        game.grid.height = h;
+        
+        game.initCells = function () {
+            for (y=0; y<game.grid.height; y++) {
+                for (x=0; x<game.grid.width; x++) {
+                    var rnd = Math.random();
+                    game.grid[game.grid.width*y + x] = (rnd < 0.5);
+                }
+            }
+        }
+        
+        game.isCellAlive = function (x, y) {
+            return (game.grid[game.grid.width*y + x] === true);
+        };
+        
+        game.setCell = function (x, y, alive) {
+            game.grid[game.grid.width*y + x] = alive;
+        };
+        
+        game.countNeighbors = function (x, y) {
+            var count = 0;
+            if (y >= 0) {
+                if (x >= 0 && game.isCellAlive(x-1, y-1)) { count++ }
+                if (game.isCellAlive(x, y-1)) { count++ }
+                if (x < game.grid.width && game.isCellAlive(x+1, y-1)) { count++ }
+            }
+            if (x >= 0 && game.isCellAlive(x-1, y)) { count++ }
+            if (x < game.grid.width && game.isCellAlive(x+1, y)) { count++ }
+            if (y < game.grid.height) {
+                if (x >= 0 && game.isCellAlive(x-1, y+1)) { count++ }
+                if (game.isCellAlive(x, y+1)) { count++ }
+                if (x < game.grid.width && game.isCellAlive(x+1, y+1)) { count++ }
+            }
+            return count;
+        };
+        
+        game.load = function (grid) {
+            game.grid = grid;
+        };
+        
+        game.step = function () {
+            var newGrid = [];
+            newGrid.width = game.grid.width;
+            newGrid.height = game.grid.height;
+            var x, y;
+            for (y=0; y<game.grid.height; y++) {
+                for (x=0; x<game.grid.width; x++) {
+                    var alive = false;
+                    var neighbors = game.countNeighbors(x, y);
+                    if (game.isCellAlive(x, y) && (neighbors === 2 || neighbors === 3)) {
+                        alive = true;
+                    } else if (neighbors === 3) {
+                        alive = true;
+                    }
+                    newGrid[game.grid.width*y + x] = alive;
+                }
+            }
+            game.grid = newGrid;
+        };
+        return game;
+    };
+    
+    var createGrid = function (w, h) {
+        var grid = Object.create(null);
+        
+        grid.html = $('#grid');
+        grid.width = w;
+        grid.height = h;
+        
+        grid.init = function () {
+            var x, y;
+            for (y=0; y<grid.height; y++) {
+                for (x=0; x<grid.width; x++) {
+                    $('<div class="cell" id="x'+x+'y'+y+'">')
+                        .appendTo(grid.html)
+                        .click( grid.clickCell );
+                }
+                grid.html.append('<br>');
+            }
+        };
+        
+        grid.getData = function () {
+            var gridData = [];
+            gridData.width = grid.width;
+            gridData.height = grid.height;
+            
+            var x, y;
+            for (y=0; y<grid.height; y++) {
+                for (x=0; x<grid.width; x++) {
+                    gridData[grid.width*y + x] = $('#x'+x+'y'+y).hasClass('alive');
+                }
+            }
+            
+            return gridData;
+        };
+        
+        grid.setData = function (data) {
+            if (data.width !== grid.width || data.height !== grid.height) {
+                throw "ERROR: data and grid have different dimensions.";
+            }
+            var x, y;
+            for (y=0; y<grid.height; y++) {
+                for (x=0; x<grid.width; x++) {
+                    var cell = $('#x'+x+'y'+y);
+                    if (data[grid.width*y + x]) {
+                        cell.addClass('alive');
+                    } else {
+                        cell.removeClass('alive');
+                    }
+                }
+            }
+        };
+        
+        grid.clickCell = function () {
+            if ($(this).hasClass('alive')) {
+                $(this).removeClass('alive');
+            } else {
+                $(this).addClass('alive');
+            }
+        };
+        
+        return grid;
+    };
+    
+    $(document).ready( function () {
+        var w = 30;
+        var h = 20;
+        
+        var game = createGame(w, h);
+        game.initCells();
+        
+        var grid = createGrid(w, h);
+        grid.init();
+        grid.setData(game.grid);
+        
+        $('#next').click( function() {
+            game.load(grid.getData());
+            game.step();
+            grid.setData(game.grid);
+        });
+    });
+</script>

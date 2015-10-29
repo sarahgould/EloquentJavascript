@@ -1,0 +1,23 @@
+<style>
+</style>
+
+<textarea id="code">return "hi";</textarea>
+<button id="button">Run</button>
+<pre id="output"></pre>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+<script>
+    $(document).ready( function () {
+        $('#button').click( function( event ) {
+            var result = '';
+            var jsCode = $('#code').val()
+            try {
+                var f = new Function(jsCode);
+                result = f();
+            } catch (error) {
+                result = 'ERROR: ' + error.message;
+            }
+            $('#output').append(result);
+        });
+    });
+</script>

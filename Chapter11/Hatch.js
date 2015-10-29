@@ -10,7 +10,7 @@ b : {
     x : 1
     y : 2
     z : "something unexpected"
-    }  
+    }
 b.x << Returns: 1 >>
 
 << Functions >>
@@ -18,7 +18,7 @@ c : { (p q)
     add( mul(p p) mul(q q) )
     }
 c(4 5) << Returns: 41 >>
-    
+
 << Closures >>
 d : {
     public : "now you see me"
@@ -40,10 +40,11 @@ WISH LIST
 
 */
 
-var util = require('util');
+//Do I need this anymore? Did I ever need it? HMF Mysteries.
+//var util = require('util');
 
 var Hatch = (function () {
-    
+
     var run = function (code) {
         return (
             'var env = Object.create(null);\n\n' +
@@ -51,7 +52,7 @@ var Hatch = (function () {
             'return ' + compile(parse(code)) + '.value();\n'
         );
     };
-    
+
     //=======
     // PARSE
     //=======
@@ -70,17 +71,17 @@ var Hatch = (function () {
         seq: /^,/,
         comment: /^(<<.*?>>)/
     };
-    
+
     var parse = function (program) {
         return parseClosure(createClosure(), program)[0];
     };
-    
+
     var parseExpr = function (rest) {
         var parseSubExpr = function (prev, rest) {
             // Continue parsing until the end of a complete expression.
             rest = skipSpace(rest);
             var expr = [];
-            
+
             var matchComment = syntax.comment.exec(rest);
             var matchString = syntax.string.exec(rest);
             var matchNumber = syntax.number.exec(rest);
@@ -89,7 +90,7 @@ var Hatch = (function () {
             var matchProp = syntax.prop.exec(rest);
             var matchArgs = syntax.args.exec(rest);
             var matchSeq = syntax.seq.exec(rest);
-            
+
             if (matchComment) {
                 // Ignore it, it's a comment.
                 expr[0] = {};
@@ -146,22 +147,22 @@ var Hatch = (function () {
                 // If nothing else, return what you've got.
                 return [prev, rest];
             }
-            
+
             // Check to see if the next thing is a property or call.
             return parseSubExpr(expr[0], expr[1]);
         };
-        
+
         return parseSubExpr(null, rest);
-        
+
     };
-    
+
     var parseDef = function (word, private, rest) {
         // Parse a definition block.
         rest = skipSpace(rest);
         var expr = parseExpr(rest);
         return [{ type: 'def', name: word, private: private, value: expr[0] }, expr[1] ];
     };
-    
+
     var parseArgs = function (rest) {
         var parseAllArgs = function (args, rest) {
             // Continue parsing expressions until the end of the argument block.
@@ -178,18 +179,18 @@ var Hatch = (function () {
                 return parseAllArgs(args, nextArg[1]);
             }
         };
-        
+
         return parseAllArgs([], rest);
     };
-    
+
     var parseClosure = function (closure, rest) {
         rest = skipSpace(rest);
         if (rest === '') { return [closure, '']; }
-        
+
         var matchArgs = syntax.args.exec(rest);
         var matchDef = syntax.def.exec(rest);
         var matchClosureEnd = syntax.closureEnd.exec(rest);
-        
+
         if (matchArgs) {
             // Match arguments block.
             var args = parseArgs(cutMatch(rest, matchArgs));
@@ -221,45 +222,45 @@ var Hatch = (function () {
             closure.expr = expr[0];
             rest = expr[1];
         }
-        
+
         return parseClosure(closure, rest);
     };
-    
+
     var createClosure = function () {
         // Create a blank closure.
         return { type: 'closure', args: [], defs: [], expr: { type: 'nothing' } };
     };
-    
+
     var skipSpace = function (string) {
         // Get rid of leading whitespace
         var first = string.search(/\S/);
         if (first == -1) { return ''; }
         return string.slice(first);
     };
-        
+
     var cutMatch = function (string, match) {
         // Return string that starts after a regex match.
         return string.slice(match[0].length);
     };
-    
+
     //===============
     // TRANSCOMPILER
     //===============
-    
+
     var indent = 0;
-    
+
     var compile = function (expr) {
         if (!expr.type) { throw new TypeError('Expression has no type.'); }
         return compileType[expr.type](expr);
     };
-    
+
     var newLine = function (indentChange) {
         if (indentChange) { indent += indentChange; }
         var text = '\n';
         for(var i=0; i<indent; i++) { text += '  '; }
         return text;
     };
-    
+
     var compileType = {
         closure: function (closure) {
             // Convert a Hatch closure to Javascript code.
@@ -376,16 +377,16 @@ var Hatch = (function () {
             return 'null';
         },
     };
-    
-    
+
+
     //===========
     // BUILT-INS
     //===========
-    
+
     var makeFunction = function (args, value) {
         return 'function(){ return {value: function ' + args + ' { ' + value + ' } }; }';
     };
-    
+
     var polyfill =
         '// HATCH basic commands\n' +
         'env.true = true;\n' +
@@ -395,25 +396,26 @@ var Hatch = (function () {
         'env.sub = ' + makeFunction('(a, b)', 'return a - b;') + ';\n' +
         'env.mul = ' + makeFunction('(a, b)', 'return a * b;') + ';\n' +
         'env.div = ' + makeFunction('(a, b)', 'return a / b;') + ';\n' +
-        
+
         'env.eq = ' + makeFunction('(a, b)', 'if (a === b) { return env.true; } else { return env.false; }') + ';\n' +
         'env.gt = ' + makeFunction('(a, b)', 'if (a > b) { return env.true; } else { return env.false; }') + ';\n' +
         'env.lt = ' + makeFunction('(a, b)', 'if (a < b) { return env.true; } else { return env.false; }') + ';\n' +
-        
+
         'env.if = ' + makeFunction('(cond, ifTrue, ifFalse)', 'if (cond === env.true) { return ifTrue; } else { return ifFalse; }') + ';\n' +
-        
+
         '\n// HATCH transcompiled code\n' ;
-    
+
     //========
     // EXPORT
     //========
-    
+
     return {
         run: run
     };
-    
+
 })();
 
+/* TEST
 var code =
     '<< This is sample Hatch program. >>\n' +
     'newVector: {(x_prime y_prime) {x:x_prime y:y_prime} }\n' +
@@ -422,6 +424,7 @@ var code =
     'vector2: newVector(1 2)\n' +
     'if(eq(addVectors(vector1 vector2).x 2) "hi" "bye")';
 var jsCode = Hatch.run(code);
-console.log(jsCode);
+//console.log(jsCode);
 var f = new Function(jsCode);
 console.log(f());
+*/
